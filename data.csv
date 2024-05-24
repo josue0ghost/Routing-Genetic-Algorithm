@@ -1,5 +1,4 @@
-punto,latitud,longitud,direccion
-POS1,14.588072840778365,-90.51033129922843,2da Calle 10-59 Zona 14
-POS2,14.6209405,-90.51429332883549,Esquina de la Ruta 2 y Via 5 Zona 4
-POS3,14.601907608937159,-90.51353437429789,12 Calle 2-25 Zona 10. Segundo Nivel. Kiosko C2-5
-POS4,14.622951729794414,-90.56182177429757,28 Ave. 220-68 Zona 11. Colonia Las Majadas. CC Las Plazas Majadas
+name,latitude,longitude,address,entree_time,unloading_time,journey2pos_time,delivery_time,journey2unloadingpoint_time,checkout_time,min_travels,max_travels,extra_times
+Zona4,14.6209405,-90.51429332883549,Esquina de la Ruta 2 y Via 5 Zona 4,50,330,70,85,205,0,1,4,555
+Avia,14.601907608937159,-90.51353437429789,12 Calle 2-25 Zona 10. Segundo Nivel. Kiosko C2-5,120,95,160,370,210,140,1,2,0
+Majadas,14.622951729794414,-90.56182177429757,28 Ave. 220-68 Zona 11. Colonia Las Majadas. CC Las Plazas Majadas,150,60,45,105,45,0,1,2,798
