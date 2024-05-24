@@ -2,8 +2,8 @@ import random
 import requests
 import json
 import classes
-
-#AIzaSyDmJwkXdl2ZzLXaDMtUyak1zQCcV-bgR20
+from datetime import datetime, timedelta
+import pytz
 
 routes_responses_dict = {}
 
@@ -25,7 +25,6 @@ child1 = ["1","4","3","0","2"]
 child2 = ["4","3","2","1","0"]
 '''
 def cxPartialyMatched(parent1:list, parent2:list):
-	# Seleccionar dos puntos de corte aleatorios
 	size = min(len(parent1), len(parent2))
 	# Choose crossover points
 	cxpoint1 = random.randint(0, size)
@@ -88,12 +87,14 @@ def cxPartialyMatched(parent1:list, parent2:list):
 
 def evaluate(individual:list):
 	# Main variables
+	# (YYYY-MM-DD)T(HH:mm:ss.ms)(UTC-6)
+	departure_time = "2024-05-24T09:00:00.000000-06:00"
 	API_KEY = ''
 	http_url = 'https://routes.googleapis.com/directions/v2:computeRoutes'
 	headers = {
 		'Content-Type': 'application/json',
 		'X-Goog-Api-Key': API_KEY,
-		'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters'
+		'X-Goog-FieldMask': 'routes.distanceMeters,routes.duration'
 	}
 	data = {
 		"origin": {
@@ -116,7 +117,7 @@ def evaluate(individual:list):
 		},
 		"travelMode": "DRIVE",
 		"routingPreference": "TRAFFIC_AWARE",
-		#"departureTime": "2024-10-15T15:01:23.045123456Z",
+		"departureTime": departure_time,
 		"computeAlternativeRoutes": False,
 		"routeModifiers": {
 			"avoidTolls": False,
@@ -134,8 +135,10 @@ def evaluate(individual:list):
 	# Adding the Origin latLng at the start and the end of the list
 	# For it is the start and the end of the route
 	points_of_sale:list = individual.copy()
-	points_of_sale.insert(-1, origin)
+	points_of_sale.insert(0, origin)
 	points_of_sale.append(origin)
+
+	responses = []
 
 	for i in range(len(points_of_sale) - 1):
 		POS_origin = points_of_sale[i]
@@ -146,17 +149,23 @@ def evaluate(individual:list):
 		data["destination"]["location"]["latLng"]["latitude"] = POS_destination.latitude
 		data["destination"]["location"]["latLng"]["longitude"] = POS_destination.longitude
 
-		# If the request respones has already be done, don't do the request again
-		responses = []
-		if routes_responses_dict.get(f'{POS_origin.name},{POS_destination.name}'):
-			responses.append(routes_responses_dict.get(f'{POS_origin.name},{POS_destination.name}'))
+		# If the request responses has already be done, don't do the request again
+		dict_key = f'{POS_origin.name},{POS_destination.name},{data["departureTime"]}'
+		if routes_responses_dict.get(dict_key):
+			response = routes_responses_dict.get(dict_key)
+			responses.append(response)
+			new_departure_time = add_time(departure_time, POS_destination.total_time, int(response['duration'].rstrip('s')))
+			data["departureTime"] = new_departure_time
 		else:
 			req_result = requests.post(http_url, json=data, headers=headers)
 			res_json = req_result.json()
 			responses.append(res_json["routes"][0])
 			# Save the request in a dictionary to save resources and time of execution
-			routes_responses_dict[f'{POS_origin.name},{POS_destination.name}'] = res_json["routes"][0]
-	
+			routes_responses_dict[dict_key] = res_json["routes"][0]
+			new_departure_time = add_time(departure_time, POS_destination.total_time, int(res_json["routes"][0]['duration'].rstrip('s')))
+			data["departureTime"] = new_departure_time
+		
+
 	# Sum all distances and duration
 	total_distance = 0
 	total_duration = 0
@@ -173,3 +182,17 @@ def evaluate(individual:list):
 
 def print_responses():
 	print(routes_responses_dict)
+
+def add_time(departure_time, origin_total_time, response_duration):
+	# Convert string to datetime
+	departure_datetime = datetime.strptime(departure_time, "%Y-%m-%dT%H:%M:%S.%f-06:00")
+	# Convert to UTC timezone
+	departure_datetime = departure_datetime.replace(tzinfo=pytz.UTC)
+	# Sum seconds using timedelta
+	add_seconds=origin_total_time + response_duration
+	new_datetime = departure_datetime + timedelta(seconds=add_seconds)
+	# Convert back to string format
+	new_departure_time = new_datetime.strftime("%Y-%m-%dT%H:%M:%S.%f") + "-06:00"
+
+	# data["departureTime"] = new_departure_time
+	return new_departure_time
