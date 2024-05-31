@@ -5,36 +5,45 @@ import classes
 from datetime import datetime, timedelta
 import pytz
 
-routes_responses_dict = {}
-# Origin
-origin = classes.Point_of_Sale("Central", 14.588072840778365, -90.51033129922843, "2da Calle 10-59 Zona 14")
-
-'''
-inputs:
-parent1 = ["0","3","2","1","4"]
-parent2 = ["2","4","3","0","1"]
-
-example with cxpoint = 1, cxpoint = 4
-child1 = ["0","4","3","0","4"]
-child2 = ["2","3","2","1","1"]
-
-relations: 
-4 - 3 - 2
-0 - 1
-
-results:
-child1 = ["1","4","3","0","2"]
-child2 = ["4","3","2","1","0"]
-'''
 def cxPartialyMatched(parent1:list, parent2:list):
-	size = min(len(parent1), len(parent2))
+	"""Executes a partially matched crossover on the input individuals.
+	The two individuals are modified in place. This crossover expects
+	:term:`sequence` individuals of any type.
+	:param parent1: The first individual participating in the crossover.
+	:param parent2: The second individual participating in the crossover.
+	:returns: A tuple of two individuals.
+
+	This crossover generates two children by matching and swapping 
+	pairs of values in a certain range of the two parents. \\
+	
+	Example with cxpoint1 = 1 and cxpoint2 = 4:
+
+	inputs:\\
+	parent1 = ["0","3","2","1","4"] \\
+	parent2 = ["2","4","3","0","1"]
+
+	Then: \\
+	child1 = ["0","4","3","0","4"] \\
+	child2 = ["2","3","2","1","1"]
+
+	Mapped relationships are: \\
+	4 - 3 - 2 \\
+	0 - 1
+
+	Returns: \\
+	child1 = ["1","4","3","0","2"] \\
+	child2 = ["4","3","2","1","0"] \\
+	"""
+
 	# Choose crossover points
+	size = min(len(parent1), len(parent2))
 	cxpoint1, cxpoint2 = sorted(random.sample(range(size), 2))
 
 	# Create offspring by exchanging genetic information between parents
 	child1 = parent1.copy()
 	child2 = parent2.copy()
 
+	# Determine mapping relationships to legalize offspring
 	mapped_relations = {}
 	for i in range(cxpoint1, cxpoint2):
 		child1[i], child2[i] = child2[i], child1[i]
@@ -42,6 +51,7 @@ def cxPartialyMatched(parent1:list, parent2:list):
 		mapped_relations[child1[i]] = child2[i]
 		mapped_relations[child2[i]] = child1[i]
 	
+	# Legalize children with the mapped relationships
 	def legalize_child(child):
 		for i in range(size):
 			if i < cxpoint1 or i >= cxpoint2:
@@ -54,10 +64,24 @@ def cxPartialyMatched(parent1:list, parent2:list):
 	return child1, child2
 
 
+routes_responses_dict = {}
+origin = classes.Point_of_Sale("Central", 14.588072840778365, -90.51033129922843, "2da Calle 10-59 Zona 14")
+
 def evaluate(individual:list):
+	"""Executes the calculation of the fitness value on the input individual.
+	This fitness function expects :term:`sequence` individual of type 
+	`Point_of_Sale`.
+	:param individual: The individual to be evaluated.
+	:returns: A tuple of integers (distanceMeters, duration)
+
+	This function uses two global variables: \\
+	`routes_responses_dict` where API Routes responses are stored and \\
+	`origin` which is a `Point_of_Sale` object describing the route's start point and last destination.\\
+	"""
+
 	# Main variables
 	# (YYYY-MM-DD)T(HH:mm:ss.ms)(UTC-6)
-	departure_time = "2024-05-28T09:00:00.000000-06:00"
+	departure_time = "2024-05-31T09:00:00.000000-06:00"
 	API_KEY = ''
 	http_url = 'https://routes.googleapis.com/directions/v2:computeRoutes'
 	headers = {
@@ -103,6 +127,7 @@ def evaluate(individual:list):
 
 	responses_list = []
 
+	# Making an API request per POS to POS route
 	for i in range(len(points_of_sale) - 1):
 		POS_origin = points_of_sale[i]
 		POS_destination = points_of_sale[i + 1]
@@ -112,12 +137,15 @@ def evaluate(individual:list):
 		data["destination"]["location"]["latLng"]["latitude"] = POS_destination.latitude
 		data["destination"]["location"]["latLng"]["longitude"] = POS_destination.longitude
 
-		# If the request responses has already be done, don't do the request again
+		# If there is already a response for the combination of
+		# origin, destination and departure time, don't make the request again
 		dict_key = f'{POS_origin.name},{POS_destination.name},{data["departureTime"]}'
 		existing_response = routes_responses_dict.get(dict_key)
 
 		if existing_response:
+			# Adding response to a list for further calculations
 			responses_list.append(existing_response)
+			# Sum destination times
 			new_departure_time = add_time(departure_time, existing_response['duration'])
 		else:
 			req_result = requests.post(http_url, json=data, headers=headers)
@@ -131,9 +159,10 @@ def evaluate(individual:list):
 			new_res_duration = POS_destination.total_time + res_duration
 			new_response["duration"] = new_res_duration
 
-			# Convert distance from string to integer type
+			# Convert distanceMeters from string to integer type
 			new_response["distanceMeters"] = int(new_response["distanceMeters"])
 
+			# Adding response to a list for further calculations
 			responses_list.append(new_response)
 
 			# Save the request in a dictionary to save resources and execution time
@@ -147,8 +176,7 @@ def evaluate(individual:list):
 	total_duration = sum(response['duration'] for response in responses_list if response.get('duration'))
 
 	# return a tuple
-	# return (total_distance, total_duration)
-	return (total_duration, total_distance)
+	return (total_distance, total_duration)
 
 
 def add_time(departure_time,  response_duration):
