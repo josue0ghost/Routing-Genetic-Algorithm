@@ -1,7 +1,7 @@
 import random
 
 class Point_of_Sale:
-  def __init__(self, name, latitude, longitude, address,
+  def __init__(self, name, latitude, longitude, address="",
               entree_time=0, unloading_time=0, journey2pos_time=0, delivery_time=0, 
               journey2unloadingpoint_time=0, checkout_time=0, min_travels=1, max_travels=1, extra_times=0):
 

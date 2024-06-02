@@ -1,9 +1,8 @@
-import random
-import requests
-import json
 import classes
 from datetime import datetime, timedelta
 import pytz
+import random
+import requests
 
 def cxPartialyMatched(parent1:list, parent2:list):
 	"""Executes a partially matched crossover on the input individuals.
@@ -65,7 +64,8 @@ def cxPartialyMatched(parent1:list, parent2:list):
 
 
 routes_responses_dict = {}
-origin = classes.Point_of_Sale("Central", 14.588072840778365, -90.51033129922843, "2da Calle 10-59 Zona 14")
+departure_time = ""
+origin = classes.Point_of_Sale("Central", 14.588072840778365, -90.51033129922843)
 
 def evaluate(individual:list):
 	"""Executes the calculation of the fitness value on the input individual.
@@ -76,18 +76,17 @@ def evaluate(individual:list):
 
 	This function uses two global variables: \\
 	`routes_responses_dict` where API Routes responses are stored and \\
-	`origin` which is a `Point_of_Sale` object describing the route's start point and last destination.\\
+	`origin` which is a `Point_of_Sale` object describing the route's start \\
+	point and last destination.
 	"""
 
 	# Main variables
-	# (YYYY-MM-DD)T(HH:mm:ss.ms)(UTC-6)
-	departure_time = "2024-05-31T09:00:00.000000-06:00"
-	API_KEY = ''
+	API_KEY = 'AIzaSyCOpv37p0AcdUj32K2UADdSmfwY_5YFH-Y'
 	http_url = 'https://routes.googleapis.com/directions/v2:computeRoutes'
 	headers = {
 		'Content-Type': 'application/json',
 		'X-Goog-Api-Key': API_KEY,
-		'X-Goog-FieldMask': 'routes.distanceMeters,routes.duration'
+		'X-Goog-FieldMask': 'routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline'
 	}
 	data = {
 		"origin": {
@@ -161,6 +160,9 @@ def evaluate(individual:list):
 
 			# Convert distanceMeters from string to integer type
 			new_response["distanceMeters"] = int(new_response["distanceMeters"])
+
+			# Polyline
+			new_response["polyline"] = new_response["polyline"]["encodedPolyline"]
 
 			# Adding response to a list for further calculations
 			responses_list.append(new_response)
