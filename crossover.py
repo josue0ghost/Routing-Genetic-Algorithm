@@ -145,7 +145,7 @@ def evaluate(individual:list):
 			# Adding response to a list for further calculations
 			responses_list.append(existing_response)
 			# Sum destination times
-			new_departure_time = add_time(departure_time, existing_response['duration'])
+			new_departure_time = add_time(data["departureTime"], existing_response['duration'])
 		else:
 			req_result = requests.post(http_url, json=data, headers=headers)
 			result = req_result.json()
@@ -169,7 +169,7 @@ def evaluate(individual:list):
 
 			# Save the request in a dictionary to save resources and execution time
 			routes_responses_dict[dict_key] = new_response
-			new_departure_time = add_time(departure_time, new_res_duration)
+			new_departure_time = add_time(data["departureTime"], new_res_duration)
 		
 		data["departureTime"] = new_departure_time
 
