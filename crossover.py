@@ -81,7 +81,7 @@ def evaluate(individual:list):
 	"""
 
 	# Main variables
-	API_KEY = 'AIzaSyCOpv37p0AcdUj32K2UADdSmfwY_5YFH-Y'
+	API_KEY = ''
 	http_url = 'https://routes.googleapis.com/directions/v2:computeRoutes'
 	headers = {
 		'Content-Type': 'application/json',
