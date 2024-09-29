@@ -41,4 +41,6 @@ class Point_of_Sale:
 
   def __str__(self):
     return f'{self.name}'
-
+  
+  def __repr__(self):
+    return f'{self.name}'
