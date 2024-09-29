@@ -1,6 +1,7 @@
 import classes
 import requests
 from datetime import datetime, timedelta
+import pytz
 
 google_res_dict = {}
 osmr_res_dict = {}
@@ -70,7 +71,7 @@ def evaluate_google(individual:list):
 	"""
 
 	# Main variables
-	API_KEY = 'AIzaSyDZpDX4pFzQH9MygwOErIvWNJXM1H0bBLc'
+	API_KEY = ''
 	http_url = 'https://routes.googleapis.com/directions/v2:computeRoutes'
 	headers = {
 		'Content-Type': 'application/json',
