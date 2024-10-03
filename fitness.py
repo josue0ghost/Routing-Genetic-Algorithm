@@ -6,7 +6,7 @@ import pytz
 google_res_dict = {}
 osmr_res_dict = {}
 departure_time = ""
-origin = classes.Point_of_Sale("Central", 14.588072840778365, -90.51033129922843)
+origin = {}
 
 def evaluate_osrm(individual:list):
 	"""Executes the calculation of the fitness value on the input individual.

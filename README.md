@@ -24,3 +24,9 @@ docker run -t -v "${PWD}:/data" osrm/osrm-backend osrm-customize /data/Guatemala
 Iniciar el servicio de ruteo:
 
 docker run -t -i -p 5000:5000 -v "${PWD}:/data" osrm/osrm-backend osrm-routed --algorithm mld /data/Guatemala/guatemala-latest.osrm
+
+# FLASK
+
+Run app
+
+flask run or python -m flask

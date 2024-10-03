@@ -1,0 +1,29 @@
+.container {
+  width: 90%;
+  margin: 20px auto;
+  text-align: center;
+}
+#coordenadas-list {
+  list-style-type: none;
+  padding: 0;
+  max-height: 30vh;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+#coordenadas-list li {
+  margin: 10px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.coord-info {
+  flex-grow: 1;
+  margin-right: 10px;
+}
+.coord-actions button {
+  margin-left: 5px;
+}
+#mensaje {
+  margin-top: 10px;
+  font-weight: bold;
+}
