@@ -2,19 +2,31 @@
 const dateTimeInput = document.getElementById('departure-time');
 const timeZoneInput = document.getElementById('utc-timezone');
 
-const centralNameInput = document.getElementById('central-name');
+const centralelement = document.getElementById('central-name');
 const centralLatInput = document.getElementById('central-lat');
 const centralLngInput = document.getElementById('central-lng');
 const addCentralButton = document.getElementById('add-central');
 
-const posNameInput = document.getElementById('pos-name')
+const poselement = document.getElementById('pos-name')
 const posLatInput = document.getElementById('pos-lat');
 const posLngInput = document.getElementById('pos-lng');
+const posAvg1 = document.getElementById('pos-avg1');
+const posAvg2 = document.getElementById('pos-avg2');
+const posAvg3 = document.getElementById('pos-avg3');
+const posAvg4 = document.getElementById('pos-avg4');
+const posAvg5 = document.getElementById('pos-avg5');
+const posAvg6 = document.getElementById('pos-avg6');
+const posAvg7 = document.getElementById('pos-avg7');
+const posAvg8 = document.getElementById('pos-avg8');
+const posAvg9 = document.getElementById('pos-avg9');
 const addPosButton = document.getElementById('add-pos');
 
+// Initialize leaflet map
+var map = L.map('map').setView([15.70, -90.30], 7); // Guatemala View
+
 // Global variables
-var coords = [];
-var central = {};
+var coords = localStorage.getItem("coords") ? JSON.parse(localStorage.getItem("coords")) : [];
+var central = localStorage.getItem("central") ? JSON.parse(localStorage.getItem("central")) : {};
 var markers = {}; 
 var datetime = '';
 var timezone = timeZoneInput.value;
@@ -22,6 +34,28 @@ var timezone = timeZoneInput.value;
 // Generate unique id
 function genID() {
   return '_' + Math.random().toString(36).substr(2, 9);
+}
+
+if (JSON.stringify(central) != '{}') {
+  updateCentral();
+  console.log("central", central);
+  setExistingMarkers(central)
+}
+if (coords != []) {
+  updateList();
+  coords.forEach(function(coord, index) {
+    setExistingMarkers(coord)
+  });
+}
+
+function setExistingMarkers(coord) {
+  console.log(coord);
+  
+  var marker = L.marker({lat: coord.lat, lng: coord.lng}).addTo(map)
+      .bindPopup(`Punto: ${coord.name}`)
+      .openPopup();
+
+  markers[coord.id] = marker
 }
 
 // Función para actualizar el contenido del popup
@@ -60,6 +94,16 @@ function deleteCoord(id) {
   updateList();
 }
 
+function createInput(type, placeholder, value, func) {
+  var element = document.createElement('input');
+  element.className = 'bg-input md:w-1/4 text-foreground p-2 rounded-md border border-border';
+  element.type = type;
+  element.placeholder = placeholder;
+  element.value = value;
+  element.onchange = func
+
+  return element
+}
 // Update coordinates list on page view
 function updateList() {
   const posMarkersList = document.getElementById('pos-markers-list');
@@ -70,51 +114,158 @@ function updateList() {
     markerItem.className = 'flex justify-between items-center bg-muted text-muted-foreground p-2 rounded-md gap-2';
     
     // Name input
-    var nameInput = document.createElement('input');
-    nameInput.className = 'bg-input md:w-1/4 text-foreground p-2 rounded-md border border-border';
-    nameInput.type = 'text';
-    nameInput.placeholder = 'Nombre';
-    nameInput.value = coord.name;
-    nameInput.onchange = function() {
+    var element = createInput('text', 'Nombre', coord.name, function() {
       coord.name = this.value;
       // Update marker's popup name
       var popupContent = coord.name ? `Punto: ${coord.name}` : `Latitud: ${coord.lat.toFixed(5)}, Longitud: ${coord.lng.toFixed(5)}`;
       markers[coord.id].bindPopup(popupContent);
-    };
+      updateList();
+    })
 
     // lat Input
-    var latInput = document.createElement('input');
-    latInput.className = 'bg-input md:w-1/4 text-foreground p-2 rounded-md border border-border';
-    latInput.type = 'number';
-    latInput.placeholder = 'Latitud';
-    latInput.value = coord.lat.toFixed(5);
-    latInput.onchange = function() {
-        var nuevoLat = parseFloat(this.value);
-        if (isNaN(nuevoLat) || nuevoLat < -90 || nuevoLat > 90) {
-            alert('Por favor, ingresa una latitud válida entre -90 y 90.');
-            this.value = coord.lat.toFixed(5);
-            return;
-        }
-        coord.lat = nuevoLat;
-        updateMarker(coord);
-    };
+    var latInput = createInput('number', 'Latitud', coord.lat.toFixed(5),  function() {
+      var nuevoLat = parseFloat(this.value);
+      if (isNaN(nuevoLat) || nuevoLat < -90 || nuevoLat > 90) {
+          alert('Por favor, ingresa una latitud válida entre -90 y 90.');
+          this.value = coord.lat.toFixed(5);
+          return;
+      }
+      coord.lat = nuevoLat;
+      updateMarker(coord);
+      updateList();
+    })
+    
 
-    // Input para la longitud
-    var lngInput = document.createElement('input');
-    lngInput.className = 'bg-input md:w-1/4 text-foreground p-2 rounded-md border border-border';
-    lngInput.type = 'number';
-    lngInput.placeholder = 'Longitud';
-    lngInput.value = coord.lng.toFixed(5);
-    lngInput.onchange = function() {
-        var nuevoLng = parseFloat(this.value);
-        if (isNaN(nuevoLng) || nuevoLng < -180 || nuevoLng > 180) {
-            alert('Por favor, ingresa una longitud válida entre -180 y 180.');
-            this.value = coord.lng.toFixed(5);
-            return;
-        }
-        coord.lng = nuevoLng;
-        updateMarker(coord);
-    };
+    // lng input
+    var lngInput = createInput('number', 'Longitud', coord.lng.toFixed(5), function() {
+      var nuevoLng = parseFloat(this.value);
+      if (isNaN(nuevoLng) || nuevoLng < -180 || nuevoLng > 180) {
+          alert('Por favor, ingresa una longitud válida entre -180 y 180.');
+          this.value = coord.lng.toFixed(5);
+          return;
+      }
+      coord.lng = nuevoLng;
+      updateMarker(coord);
+      updateList();
+    })
+    
+
+    // entree_time input
+    var entree_time = createInput('number', 'Tiempo de entrada prom. (s)', coord.entree_time.toFixed(5), function() {
+      var newEntree_time = parseFloat(this.value);
+      if (isNaN(newEntree_time)) {
+        alert('Por favor, ingresa un tiempo válido en segundos');
+        this.value = coord.entree_time.toFixed(5);
+        return;
+      }
+      coord.entree_time = newEntree_time;
+      updateMarker(coord);
+      updateList();
+    })
+
+    // unloading_time input
+    var unloading_time = createInput('number', 'Tiempo de descarga prom. (s)', coord.unloading_time.toFixed(5), function() {
+      var newunloading_time = parseFloat(this.value);
+      if (isNaN(newunloading_time)) {
+        alert('Por favor, ingresa un tiempo válido en segundos');
+        this.value = coord.unloading_time.toFixed(5);
+        return;
+      }
+      coord.unloading_time = newunloading_time;
+      updateMarker(coord);
+      updateList();
+    })
+    
+    // journey2pos_time input
+    var journey2pos_time = createInput('number', 'Tiempo de viaje de ida al local prom. (s)', coord.journey2pos_time.toFixed(5), function() {
+      var newjourney2pos_time = parseFloat(this.value);
+      if (isNaN(newjourney2pos_time)) {
+        alert('Por favor, ingresa un tiempo válido en segundos');
+        this.value = coord.journey2pos_time.toFixed(5);
+        return;
+      }
+      coord.journey2pos_time = newjourney2pos_time;
+      updateMarker(coord);
+      updateList();
+    })
+
+    // delivery_time input
+    var delivery_time = createInput('number', 'Tiempo de entrega prom. (s)', coord.delivery_time.toFixed(5), function() {
+      var newdelivery_time = parseFloat(this.value);
+      if (isNaN(newdelivery_time)) {
+        alert('Por favor, ingresa un tiempo válido en segundos');
+        this.value = coord.delivery_time.toFixed(5);
+        return;
+      }
+      coord.delivery_time = newdelivery_time;
+      updateMarker(coord);
+      updateList();
+    })
+
+    // journey2unloadingpoint_time input
+    var journey2unloadingpoint_time = createInput('number', 'Tiempo de viaje de regreso al camión prom. (s)', coord.journey2unloadingpoint_time.toFixed(5), function() {
+      var newjourney2unloadingpoint_time = parseFloat(this.value);
+      if (isNaN(newjourney2unloadingpoint_time)) {
+        alert('Por favor, ingresa un tiempo válido en segundos');
+        this.value = coord.journey2unloadingpoint_time.toFixed(5);
+        return;
+      }
+      coord.journey2unloadingpoint_time = newjourney2unloadingpoint_time;
+      updateMarker(coord);
+      updateList();
+    })
+
+    // checkout_time input
+    var checkout_time = createInput('number', 'Tiempo de salida prom. (s)', coord.checkout_time.toFixed(5), function() {
+      var newcheckout_time = parseFloat(this.value);
+      if (isNaN(newcheckout_time)) {
+        alert('Por favor, ingresa un tiempo válido en segundos');
+        this.value = coord.checkout_time.toFixed(5);
+        return;
+      }
+      coord.checkout_time = newcheckout_time;
+      updateMarker(coord);
+      updateList();
+    })
+
+    // min_travels input
+    var min_travels = createInput('number', 'Mínimo de viajes necesarios', coord.min_travels.toFixed(5), function() {
+      var newmin_travels = parseFloat(this.value);
+      if (isNaN(newmin_travels)) {
+        alert('Por favor, ingresa número válido');
+        this.value = coord.min_travels.toFixed(5);
+        return;
+      }
+      coord.min_travels = newmin_travels;
+      updateMarker(coord);
+      updateList();
+    })
+
+    // max_travels input
+    var max_travels = createInput('number', 'Máximo de viajes necesarios', coord.max_travels.toFixed(5), function() {
+      var newmax_travels = parseFloat(this.value);
+      if (isNaN(newmax_travels)) {
+        alert('Por favor, ingresa número válido');
+        this.value = coord.max_travels.toFixed(5);
+        return;
+      }
+      coord.max_travels = newmax_travels;
+      updateMarker(coord);
+      updateList();
+    })
+
+    // extra_times input
+    var extra_times = createInput('number', 'Tiempos extras (s)', coord.extra_times.toFixed(5), function() {
+      var newextra_times = parseFloat(this.value);
+      if (isNaN(newextra_times)) {
+        alert('Por favor, ingresa un tiempo válido en segundos');
+        this.value = coord.extra_times.toFixed(5);
+        return;
+      }
+      coord.extra_times = newextra_times;
+      updateMarker(coord);
+      updateList();
+    })
 
     var deleteBtn = document.createElement('button');
     deleteBtn.className = 'md:w-1/4 bg-destructive text-destructive-foreground p-2 rounded-md'
@@ -124,13 +275,24 @@ function updateList() {
     };
 
     // Add inputs to infoDiv
-    markerItem.appendChild(nameInput);
+    markerItem.appendChild(element);
     markerItem.appendChild(latInput);
     markerItem.appendChild(lngInput);
+    markerItem.appendChild(entree_time);
+    markerItem.appendChild(unloading_time);
+    markerItem.appendChild(journey2pos_time);
+    markerItem.appendChild(delivery_time);
+    markerItem.appendChild(journey2unloadingpoint_time);
+    markerItem.appendChild(checkout_time);
+    markerItem.appendChild(min_travels);
+    markerItem.appendChild(max_travels);
+    markerItem.appendChild(extra_times);
     markerItem.appendChild(deleteBtn);
 
     posMarkersList.appendChild(markerItem);
   });
+
+  localStorage.setItem("coords", JSON.stringify(coords))
 }
 
 // Update coordinates list on page view
@@ -142,16 +304,17 @@ function updateCentral() {
   markerItem.className = 'flex justify-between items-center bg-muted text-muted-foreground p-2 rounded-md gap-2';
   
   // Name input
-  var nameInput = document.createElement('input');
-  nameInput.className = 'bg-input md:w-1/3 text-foreground p-2 rounded-md border border-border';
-  nameInput.type = 'text';
-  nameInput.placeholder = 'Nombre';
-  nameInput.value = central.name;
-  nameInput.onchange = function() {
+  var element = document.createElement('input');
+  element.className = 'bg-input md:w-1/3 text-foreground p-2 rounded-md border border-border';
+  element.type = 'text';
+  element.placeholder = 'Nombre';
+  element.value = central.name;
+  element.onchange = function() {
     central.name = this.value;
     // Update marker's popup name
     var popupContent = central.name ? `Punto: ${central.name}` : `Latitud: ${central.lat.toFixed(5)}, Longitud: ${central.lng.toFixed(5)}`;
     markers[central.id].bindPopup(popupContent);
+    updateCentral();
   };
 
   // lat Input
@@ -169,6 +332,7 @@ function updateCentral() {
       }
       central.lat = nuevoLat;
       updateMarker(central);
+      updateCentral();
   };
 
   // Input para la longitud
@@ -186,19 +350,18 @@ function updateCentral() {
       }
       central.lng = nuevoLng;
       updateMarker(central);
+      updateCentral();
   };
 
   // Add inputs to infoDiv
-  markerItem.appendChild(nameInput);
+  markerItem.appendChild(element);
   markerItem.appendChild(latInput);
   markerItem.appendChild(lngInput);
 
   centralMarkersList.appendChild(markerItem);
 
+  localStorage.setItem("central", JSON.stringify(central))
 }
-
-// Initialize leaflet map
-var map = L.map('map').setView([15.70, -90.30], 7); // Guatemala View
 
 // Add a tiles layer
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -214,7 +377,15 @@ map.on('click', function(e) {
     name: id,
     lat: latlng.lat,
     lng: latlng.lng,
-    avgTime: 0,
+    entree_time: 0,
+    unloading_time: 0,
+    journey2pos_time: 0,
+    delivery_time: 0,
+    journey2unloadingpoint_time: 0,
+    checkout_time: 0,
+    min_travels: 1,
+    max_travels: 1,
+    extra_times: 0,
   };
   coords.push(coord);
 
@@ -228,7 +399,7 @@ map.on('click', function(e) {
 });
 
 addCentralButton.addEventListener('click', () => {
-  const name = centralNameInput.value
+  const name = centralelement.value
   const lat = parseFloat(centralLatInput.valueAsNumber);
   const lng = parseFloat(centralLngInput.valueAsNumber);
 
@@ -241,7 +412,7 @@ addCentralButton.addEventListener('click', () => {
 
     var id = genID();
     markers[id] = marker;
-
+    
     var coord = {
       id: id,
       name: name,
@@ -256,10 +427,18 @@ addCentralButton.addEventListener('click', () => {
 });
 
 addPosButton.addEventListener('click', () => {
-  const name = posNameInput.value
+  const name = poselement.value
   const lat = parseFloat(posLatInput.valueAsNumber);
   const lng = parseFloat(posLngInput.valueAsNumber);
-
+  const entree_time = parseFloat(posAvg1.valueAsNumber);
+  const unloading_time = parseFloat(posAvg2.valueAsNumber);
+  const journey2pos_time = parseFloat(posAvg3.valueAsNumber);
+  const delivery_time = parseFloat(posAvg4.valueAsNumber);
+  const journey2unloadingpoint_time = parseFloat(posAvg5.valueAsNumber);
+  const checkout_time = parseFloat(posAvg6.valueAsNumber);
+  const min_travels = parseFloat(posAvg7.valueAsNumber);
+  const max_travels = parseFloat(posAvg8.valueAsNumber);
+  const extra_times = parseFloat(posAvg9.valueAsNumber);
   if (name && lat && lng) {
     // Add marker to the map
     var marker = L.marker({lat: lat, lng: lng}).addTo(map)
@@ -274,7 +453,15 @@ addPosButton.addEventListener('click', () => {
       name: name,
       lat: lat,
       lng: lng,
-      avgTime: 0,
+      entree_time: entree_time,
+      unloading_time: unloading_time,
+      journey2pos_time: journey2pos_time,
+      delivery_time: delivery_time,
+      journey2unloadingpoint_time: journey2unloadingpoint_time,
+      checkout_time: checkout_time,
+      min_travels: min_travels,
+      max_travels: max_travels,
+      extra_times: extra_times,
     };
     coords.push(coord);
     
