@@ -26,8 +26,6 @@ def calc_route():
   # Obtener la ruta de OSRM
   result_df = ga.ga_request(central=central, pos=coords, departure_time=departureTime)
   if not result_df.empty:
-      print("Ruta obtenida de OSRM:")
-      print(result_df)
       return jsonify({'mensaje': result_df.to_html(classes='w-full table-auto')})
   else:
       return jsonify({'mensaje': 'Coordenadas procesadas pero falló la obtención de la ruta.'}), 500

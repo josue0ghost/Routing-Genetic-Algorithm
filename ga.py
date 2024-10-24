@@ -13,12 +13,29 @@ from deap import base, creator, tools
 toolbox = base.Toolbox()
 # weights is a tuple of -1.0s which means we want to Minimize two values: Distance and Time
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,-1.0))
-creator.create("Individual", list, fitness=creator.FitnessMin)
+creator.create("Individual", list, fitness=creator.FitnessMin, polylines=[])
 
 # shuffle the Point_of_Sale list of an individual
 def shuffle_sequence(individual):
   random.shuffle(individual)
   return individual
+
+def get_unique_values(pop):
+  # Show results. Get unique values
+  def extract_names(individual):
+      return [pos.name for pos in individual]
+
+  pop_data = np.array([extract_names(ind) for ind in pop])
+  pop_df = pd.DataFrame(pop_data)
+
+  fitnesses_list = []
+  for ind in pop:
+    fitnesses_list.append(ind.fitness.values)
+
+  fitness_df = pd.DataFrame(fitnesses_list, columns=['Distancia (m)', 'Tiempo (s)'])
+
+  result_df = pd.concat([pop_df, fitness_df], axis=1)
+  return result_df
 
 # Main Genetic Algorithm
 def genetic_algorithm(matepb, mutpb, ngen, npop):
@@ -72,17 +89,18 @@ def genetic_algorithm(matepb, mutpb, ngen, npop):
   
   return population  
 
-# GA Execution
-# (YYYY-MM-DD)T(HH:mm:ss.ms)(UTC-6)
-# crossover.departure_time = "2024-09-27T09:00:00.000000-06:00"
-
-# pop = main(matepb=0.5, mutpb=0.5, ngen=100, npop=100)
 def ga_request(central, pos, departure_time):
+  """Executes the main genetic algorithm through the flask app.
+  :param central: Dict object with name, lat and lng attributes.
+  :param pos: list of dicts with the same attributes from Point_of_Sale class except for the `address` attribute.
+  :param departure_time: Datetime string with the format `YYYY-MM-DDTHH:mm:00.000000-06:00`
+  :returns: a :term:`DataFrame` containing the last generation of a population
+  """
   fitness.origin = classes.Point_of_Sale("Central", central['lat'], central['lng'])
   fitness.departure_time = departure_time
 
+  # Conversion to Point_of_Sale
   pos = pd.DataFrame(pos).to_records(index=False).tolist()
-  print(pos)
   pos_list = [
     classes.Point_of_Sale(
       point[1], point[2], point[3], "",
@@ -106,24 +124,20 @@ def ga_request(central, pos, departure_time):
   toolbox.register("mutate", mutation.smart_mutation_with_df, distance_df=distance_df)
   # tournsize = The number of individuals participating in each tournament
   toolbox.register("select", tools.selTournament, tournsize=2)
-  # fitness function from ./crossover.py
+  # fitness function from ./fitness.py
   toolbox.register("evaluate", fitness.evaluate_osrm)
+  toolbox.register("evaluate_traffic", fitness.evaluate_google)
 
+  # Algorithm execution with OSRM
   pop = genetic_algorithm(matepb=0.5, mutpb=0.5, ngen=100, npop=100)
 
-  # Show results
-  def extract_names(individual):
-      return [pos.name for pos in individual]
+  # Last evaluation with Routes API
+  fitnesses = map(toolbox.evaluate_traffic, pop)
+  for individual, fit in zip(pop, fitnesses):
+    individual.fitness.values = fit
 
-  pop_data = np.array([extract_names(ind) for ind in pop])
-  pop_df = pd.DataFrame(pop_data)
+  print(pop[0].polylines)
+  # Get unique values in population
+  result_df = get_unique_values(pop)
 
-  fitnesses_list = []
-  for ind in pop:
-    fitnesses_list.append(ind.fitness.values)
-
-  fitness_df = pd.DataFrame(fitnesses_list, columns=['Distancia (m)', 'Tiempo (s)'])
-
-  result_df = pd.concat([pop_df, fitness_df], axis=1)
-  
   return result_df.value_counts().to_frame(name="f")
