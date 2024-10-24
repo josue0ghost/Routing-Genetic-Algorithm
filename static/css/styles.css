@@ -27,3 +27,23 @@
   margin-top: 10px;
   font-weight: bold;
 }
+
+thead {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+tr {
+  text-align: center !important;
+  border-width: thin;
+}
+
+th {
+  padding: 1rem;
+  border-width: thin;
+}
+
+td {
+  text-align: center;
+  padding: 1rem;
+}

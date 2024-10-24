@@ -507,11 +507,11 @@ document.getElementById('send-btn').addEventListener('click', function() {
   })
   .then(response => response.json())
   .then(data => {
-    document.getElementById('message').textContent = data.message;
+    document.getElementById('mensaje').innerHTML = data.mensaje;
   })
   .catch((error) => {
     console.error('Error:', error);
-    document.getElementById('message').textContent = 'Something happened while calculating the route.';
+    document.getElementById('mensaje').textContent = 'Something happened while calculating the route.';
   });
 });
 
