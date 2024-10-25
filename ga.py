@@ -13,7 +13,7 @@ from deap import base, creator, tools
 toolbox = base.Toolbox()
 # weights is a tuple of -1.0s which means we want to Minimize two values: Distance and Time
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,-1.0))
-creator.create("Individual", list, fitness=creator.FitnessMin, polylines=[])
+creator.create("Individual", list, fitness=creator.FitnessMin, polylines=(0,0))
 
 # shuffle the Point_of_Sale list of an individual
 def shuffle_sequence(individual):
@@ -29,13 +29,18 @@ def get_unique_values(pop):
   pop_df = pd.DataFrame(pop_data)
 
   fitnesses_list = []
+  polylines_list = []
   for ind in pop:
     fitnesses_list.append(ind.fitness.values)
+    polylines_list.append(ind.polylines)
 
   fitness_df = pd.DataFrame(fitnesses_list, columns=['Distancia (m)', 'Tiempo (s)'])
-
-  result_df = pd.concat([pop_df, fitness_df], axis=1)
-  return result_df
+  polylines_df = pd.DataFrame({"Polilineas": polylines_list} )
+  result_df = pd.concat([pop_df, fitness_df, polylines_df], axis=1)
+  
+  df_counts = result_df.value_counts().to_frame(name="f")
+  df_counts.reset_index(inplace=True)
+  return df_counts
 
 # Main Genetic Algorithm
 def genetic_algorithm(matepb, mutpb, ngen, npop):
@@ -132,12 +137,12 @@ def ga_request(central, pos, departure_time):
   pop = genetic_algorithm(matepb=0.5, mutpb=0.5, ngen=100, npop=100)
 
   # Last evaluation with Routes API
-  fitnesses = map(toolbox.evaluate_traffic, pop)
-  for individual, fit in zip(pop, fitnesses):
-    individual.fitness.values = fit
+  fitnesses_polylines = map(toolbox.evaluate_traffic, pop)
+  for individual, fit_poly in zip(pop, fitnesses_polylines):
+    individual.fitness.values = fit_poly["fitness"]
+    individual.polylines = fit_poly["polylines"]
 
-  print(pop[0].polylines)
   # Get unique values in population
   result_df = get_unique_values(pop)
 
-  return result_df.value_counts().to_frame(name="f")
+  return result_df

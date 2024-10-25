@@ -1,6 +1,5 @@
 // DOM Elements
 const dateTimeInput = document.getElementById('departure-time');
-const timeZoneInput = document.getElementById('utc-timezone');
 
 const centralelement = document.getElementById('central-name');
 const centralLatInput = document.getElementById('central-lat');
@@ -28,8 +27,8 @@ var map = L.map('map').setView([15.70, -90.30], 7); // Guatemala View
 var coords = localStorage.getItem("coords") ? JSON.parse(localStorage.getItem("coords")) : [];
 var central = localStorage.getItem("central") ? JSON.parse(localStorage.getItem("central")) : {};
 var markers = {}; 
+var polylinesList = [];
 var datetime = '';
-var timezone = timeZoneInput.value;
 
 // Generate unique id
 function genID() {
@@ -38,7 +37,6 @@ function genID() {
 
 if (JSON.stringify(central) != '{}') {
   updateCentral();
-  console.log("central", central);
   setExistingMarkers(central)
 }
 if (coords != []) {
@@ -49,7 +47,6 @@ if (coords != []) {
 }
 
 function setExistingMarkers(coord) {
-  console.log(coord);
   
   var marker = L.marker({lat: coord.lat, lng: coord.lng}).addTo(map)
       .bindPopup(`Punto: ${coord.name}`)
@@ -473,18 +470,10 @@ dateTimeInput.onchange = function() {
   datetime = dateTimeInput.value;
 };
 
-timeZoneInput.onchange = function() {
-  timezone = timeZoneInput.value;
-};
-
 // Handling sending coordinates
 document.getElementById('send-btn').addEventListener('click', function() {
   if (datetime == '' || new Date(datetime) < new Date()) {
     alert('Please, insert a valid date and time for calculations. Must be greater than todays date.');
-    return;
-  }
-  if (timezone == '') {
-    alert('Please, select a time zone');
     return;
   }
   if (central == {}) {
@@ -496,7 +485,7 @@ document.getElementById('send-btn').addEventListener('click', function() {
     return;
   }
 
-  departureTime = `${datetime}:00.000000${timezone}`;
+  departureTime = `${datetime}:00.000000-06:00`;
 
   fetch('/calc_route', {
     method: 'POST',
@@ -515,3 +504,23 @@ document.getElementById('send-btn').addEventListener('click', function() {
   });
 });
 
+function mostrarPolilineas(polilineasData) {
+  // Parsear las polilíneas de texto JSON a un array de coordenadas
+  const polylines = polilineasData;
+  
+  // limpiar polylineas antiguas
+  if (polylinesList.length != 0) {
+    polylinesList.forEach(function (item) {
+      map.removeLayer(item)
+    });
+    polylinesList = []
+  }
+
+  // Crear cada polilínea en el mapa
+  polylines.forEach((coords) => {
+      const polyline = L.polyline(coords, {color: 'blue'}).addTo(map);
+      polylinesList.push(polyline);
+      // Ajustar el mapa para incluir la polilínea
+      map.fitBounds(polyline.getBounds());
+  });
+}
