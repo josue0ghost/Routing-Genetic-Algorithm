@@ -1,6 +1,6 @@
 import random
 
-def cxOrdered(parent1, parent2):
+def cxOrdered(parent1:list, parent2:list):
 	"""Executes a Ordered crossover on the input individuals.
 	The two individuals are modified in place. This crossover expects
 	:term:`sequence` individuals of any type.

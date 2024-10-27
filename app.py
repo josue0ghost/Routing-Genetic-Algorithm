@@ -28,6 +28,8 @@ def calc_route():
   # Obtener la ruta de OSRM
   result_df = ga.ga_request(central=central, pos=coords, departure_time=departureTime)
   
+  result_df['Distancia (km)'] = result_df.apply(lambda row: int(row.values[-4])/1000, axis=1)
+  result_df['Tiempo (h)'] = result_df.apply(lambda row: int(row.values[-3])/3600, axis=1)
   result_df['accion'] = result_df.apply(
     lambda row: 
       '<button class="bg-primary text-primary-foreground p-2 rounded-md" onclick="mostrarPolilineas({polilineas})">Mostrar rutas</button>'

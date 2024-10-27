@@ -113,7 +113,7 @@ def evaluate_google(individual:list):
 	# Adding the Origin latLng at the start and the end of the list
 	# For it is the start and the end of the route
 	points_of_sale = [origin] + individual + [origin]
-
+	individual_polylines = []
 	responses_list = []
 
 	# Making an API request per POS to POS route
@@ -139,7 +139,6 @@ def evaluate_google(individual:list):
 		else:
 			req_result = requests.post(http_url, json=data, headers=headers)
 			result = req_result.json()
-
 			new_response = result["routes"][0]
 
 			# Sum destination times to the api response
@@ -161,14 +160,16 @@ def evaluate_google(individual:list):
 			google_res_dict[dict_key] = new_response
 			new_departure_time = add_time(data["departureTime"], new_res_duration)
 		
+		existing_response = google_res_dict.get(dict_key)
+		individual_polylines.append(existing_response["polyline"])
 		data["departureTime"] = new_departure_time
 
 	# Sum all distances and duration
 	total_distance = sum(response['distanceMeters'] for response in responses_list if response.get('distanceMeters'))
 	total_duration = sum(response['duration'] for response in responses_list if response.get('duration'))
 
-	# return a tuple
-	return (total_distance, total_duration)
+	# return a tuple for fitness
+	return {"fitness": (total_distance, total_duration), "polylines": tuple(individual_polylines)}
 
 
 def add_time(departure_time,  response_duration):

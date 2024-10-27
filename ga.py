@@ -34,7 +34,7 @@ def get_unique_values(pop):
     fitnesses_list.append(ind.fitness.values)
     polylines_list.append(ind.polylines)
 
-  fitness_df = pd.DataFrame(fitnesses_list, columns=['Distancia (m)', 'Tiempo (s)'])
+  fitness_df = pd.DataFrame(fitnesses_list, columns=['Distancia (km)', 'Tiempo (h)'])
   polylines_df = pd.DataFrame({"Polilineas": polylines_list} )
   result_df = pd.concat([pop_df, fitness_df, polylines_df], axis=1)
   
@@ -124,8 +124,7 @@ def ga_request(central, pos, departure_time):
   toolbox.register("population", tools.initRepeat, list, toolbox.individual)
   # mate function from ./crossover.py
   toolbox.register("mate", crossover.cxOrdered)
-  # mutation function that uses DEAP's function mutShuffleIndexes. 
-  # indpb is the probability of each attribute to be exchanged to another position
+  # mutation function from ./mutation.py
   toolbox.register("mutate", mutation.smart_mutation_with_df, distance_df=distance_df)
   # tournsize = The number of individuals participating in each tournament
   toolbox.register("select", tools.selTournament, tournsize=2)

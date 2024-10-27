@@ -1,6 +1,5 @@
 numpy
 pandas
 deap
-folium
 polyline
 Flask
